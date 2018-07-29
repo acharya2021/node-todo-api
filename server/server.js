@@ -12,6 +12,8 @@ var {User} = require('./models/user');
 
 // create a variable called app to store our express application
 var app = express();
+// create a port for deployment to heroku
+const port = process.env.PORT || 3000;
 
 // configure the middleware
 app.use(bodyParser.json());
@@ -77,8 +79,8 @@ app.get('/todos/:id', (req, res) => {
 
 
 // this is a very basic server
-app.listen(3000, () => {
-    console.log('Started on port 3000');
+app.listen(port, () => {
+    console.log(`Started on port ${port}`);
 });
 
 // export the app
