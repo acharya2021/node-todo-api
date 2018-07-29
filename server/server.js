@@ -1,6 +1,7 @@
 // LIBRARY IMPORTS
 var express = require('express');
 var bodyParser = require('body-parser');
+const {ObjectID} = require('mongodb');
 
 // LOCAL IMPORTS
 var {mongoose} = require('./db/mongoose');
@@ -42,6 +43,34 @@ app.get('/todos', (req, res) => {
         res.send({todos});
     }, (e) => {
         res.status(400).send(e);
+    });
+
+});
+
+// GET /todos/12345
+app.get('/todos/:id', (req, res) => {
+    var id = req.params.id;
+
+    // validate id using isValid
+    if (!ObjectID.isValid(id)) {
+        // console.log("ID not valid");
+        //returns 404 not found error on Postman
+        return res.status(404).send();
+    }
+
+    Todo.findById(id).then((todo) => {
+        // even if the query is successful, it might not result
+        // in the actual document being returned. So check if it exists
+        if (!todo) {
+            // return console.log("No todo found");
+            return res.status(404).send();
+        }
+        // console.log("Todo by ID:", todo);
+        res.send({todo});
+
+    }, (e) => {
+        // console.log("An error occurred!");
+        res.status(400).send();
     });
 
 });
