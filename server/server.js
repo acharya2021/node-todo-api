@@ -77,6 +77,24 @@ app.get('/todos/:id', (req, res) => {
 
 });
 
+// Delete a todo item by ID
+app.delete('/todos/:id', (req, res) => {
+    // get the id off the request object
+    var id = req.params.id;
+    // validate the id
+    if (!ObjectID.isValid(id)) {
+        return res.status(404).send();
+    }
+    //now remove Todo by id
+    Todo.findByIdAndRemove(id).then((todo) => {
+        if (!todo) {
+            return res.status(404).send();
+        }
+        res.status(200).send(todo);
+    }, (e) => {
+        res.status(400).send();
+    });
+});
 
 // this is a very basic server
 app.listen(port, () => {
