@@ -36,6 +36,16 @@ app.post('/todos', (req, res) => {
 
 });
 
+// register the GET handler using app.get
+app.get('/todos', (req, res) => {
+    Todo.find().then((todos) => {
+        res.send({todos});
+    }, (e) => {
+        res.status(400).send(e);
+    });
+
+});
+
 
 // this is a very basic server
 app.listen(3000, () => {
