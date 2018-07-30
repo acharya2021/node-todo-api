@@ -5,6 +5,7 @@ const bodyParser = require('body-parser');
 const {ObjectID} = require('mongodb');
 
 // LOCAL IMPORTS
+require('./config/config');
 var {mongoose} = require('./db/mongoose');
 // load in Todo and User
 // create a variable using destructuring
@@ -14,7 +15,7 @@ var {User} = require('./models/user');
 // create a variable called app to store our express application
 var app = express();
 // create a port for deployment to heroku
-const port = process.env.PORT || 3000;
+const port = process.env.PORT;
 
 // configure the middleware
 app.use(bodyParser.json());
