@@ -21,7 +21,7 @@ const port = process.env.PORT;
 app.use(bodyParser.json());
 
 // configure your routes
-// create a POST route to let us create Todos
+// create a POST /todos route to let us create Todos
 
 app.post('/todos', (req, res) => {
     // the body gets stored by bodyParser
@@ -33,9 +33,33 @@ app.post('/todos', (req, res) => {
         text: req.body.text
     });
 
+    // save it and handle the success case and the failure case
     todo.save().then((doc) => {
         res.send(doc);
     }, (e) => {
+        res.status(400).send(e);
+    });
+
+});
+
+// POST /users
+// the first argument is the url, the second is the callback function
+app.post('/users', (req, res) => {
+
+    // use the pick method.
+    // The first argument is the object you want to pick from
+    // The second one is the attributes you want to pick
+    var body = _.pick(req.body, ['email', 'password']);
+
+    // create a new instance of User
+    var user = new User(body);
+
+    // save this document to the database
+    user.save().then(() => {
+        return user.generateAuthToken();
+    }).then((token) => {
+        res.header('x-auth', token).send(user);
+    }).catch((e) => {
         res.status(400).send(e);
     });
 
