@@ -11,6 +11,7 @@ var {mongoose} = require('./db/mongoose');
 // create a variable using destructuring
 var {Todo} = require('./models/todo');
 var {User} = require('./models/user');
+var {authenticate} = require('./middleware/authenticate');
 
 // create a variable called app to store our express application
 var app = express();
@@ -63,6 +64,11 @@ app.post('/users', (req, res) => {
         res.status(400).send(e);
     });
 
+});
+
+// create a private route
+app.get('/users/me', authenticate, (req, res) => {
+    res.send(req.user);
 });
 
 // register the GET handler using app.get
