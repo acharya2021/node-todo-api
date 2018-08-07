@@ -24,7 +24,7 @@ app.use(bodyParser.json());
 // configure your routes
 // create a POST /todos route to let us create Todos
 
-app.post('/todos', authenticate, (req, res) => {
+app.post('/todos', authenticate, async (req, res) => {
     // the body gets stored by bodyParser
     // console.log(req.body);
 
@@ -35,35 +35,51 @@ app.post('/todos', authenticate, (req, res) => {
         _creator: req.user._id
     });
 
-    // save it and handle the success case and the failure case
-    todo.save().then((doc) => {
+    try {
+        const doc = await todo.save();
         res.send(doc);
-    }, (e) => {
+    } catch (e) {
         res.status(400).send(e);
-    });
+    }
+
+    // // save it and handle the success case and the failure case
+    // todo.save().then((doc) => {
+    //     res.send(doc);
+    // }, (e) => {
+    //     res.status(400).send(e);
+    // });
 
 });
 
 // POST /users
 // the first argument is the url, the second is the callback function
-app.post('/users', (req, res) => {
+app.post('/users', async (req, res) => {
 
     // use the pick method.
     // The first argument is the object you want to pick from
     // The second one is the attributes you want to pick
-    var body = _.pick(req.body, ['email', 'password']);
+    const body = _.pick(req.body, ['email', 'password']);
 
     // create a new instance of User
-    var user = new User(body);
+    const user = new User(body);
 
-    // save this document to the database
-    user.save().then(() => {
-        return user.generateAuthToken();
-    }).then((token) => {
+    try {
+        await user.save();
+        const token = await user.generateAuthToken();
         res.header('x-auth', token).send(user);
-    }).catch((e) => {
+    } catch (e) {
         res.status(400).send(e);
-    });
+    }
+
+
+    // // save this document to the database
+    // user.save().then(() => {
+    //     return user.generateAuthToken();
+    // }).then((token) => {
+    //     res.header('x-auth', token).send(user);
+    // }).catch((e) => {
+    //     res.status(400).send(e);
+    // });
 
 });
 
@@ -74,31 +90,52 @@ app.get('/users/me', authenticate, (req, res) => {
 
 // Route for logging in users
 // POST /users/login {email, password}
-app.post('/users/login', (req, res) => {
-    var body = _.pick(req.body, ['email', 'password']);
-    User.findByCredentials(body.email, body.password).then((user) => {
-        return user.generateAuthToken().then((token) => {
-            res.header('x-auth', token).send(user);
-        });
-    }).catch((e) => {
+app.post('/users/login', async (req, res) => {
+
+    try {
+        const body = _.pick(req.body, ['email', 'password']);
+        const user = await User.findByCredentials(body.email, body.password);
+        const token = await user.generateAuthToken();
+        res.header('x-auth', token).send(user);
+    } catch (e) {
         res.status(400).send();
-    });
+    }
+
+    // User.findByCredentials(body.email, body.password).then((user) => {
+    //     return user.generateAuthToken().then((token) => {
+    //         res.header('x-auth', token).send(user);
+    //     });
+    // }).catch((e) => {
+    //     res.status(400).send();
+    // });
 });
 
 // register the GET handler using app.get
-app.get('/todos', authenticate, (req, res) => {
-    Todo.find({
-        _creator: req.user._id
-    }).then((todos) => {
+app.get('/todos', authenticate, async (req, res) => {
+
+    try {
+        const todos = await Todo.find({
+            _creator: req.user._id
+        });
         res.send({todos});
-    }, (e) => {
+
+    } catch (e) {
         res.status(400).send(e);
-    });
+    }
+
+
+    // Todo.find({
+    //     _creator: req.user._id
+    // }).then((todos) => {
+    //     res.send({todos});
+    // }, (e) => {
+    //     res.status(400).send(e);
+    // });
 
 });
 
 // GET /todos/12345
-app.get('/todos/:id', authenticate, (req, res) => {
+app.get('/todos/:id', authenticate, async (req, res) => {
     var id = req.params.id;
 
     // validate id using isValid
@@ -108,50 +145,79 @@ app.get('/todos/:id', authenticate, (req, res) => {
         return res.status(404).send();
     }
 
-    Todo.findOne({
-        _id: id,
-        _creator: req.user._id
-    }).then((todo) => {
-        // even if the query is successful, it might not result
-        // in the actual document being returned. So check if it exists
+    try {
+        const todo = await Todo.findOne({
+            _id: id,
+            _creator: req.user._id
+        });
         if (!todo) {
             // return console.log("No todo found");
             return res.status(404).send();
         }
         // console.log("Todo by ID:", todo);
         res.send({todo});
-
-    }, (e) => {
-        // console.log("An error occurred!");
+    } catch (e) {
         res.status(400).send();
-    });
+    }
+
+    // Todo.findOne({
+    //     _id: id,
+    //     _creator: req.user._id
+    // }).then((todo) => {
+    //     // even if the query is successful, it might not result
+    //     // in the actual document being returned. So check if it exists
+    //     if (!todo) {
+    //         // return console.log("No todo found");
+    //         return res.status(404).send();
+    //     }
+    //     // console.log("Todo by ID:", todo);
+    //     res.send({todo});
+    //
+    // }, (e) => {
+    //     // console.log("An error occurred!");
+    //     res.status(400).send();
+    // });
 
 });
 
 // Delete a todo item by ID
-app.delete('/todos/:id', authenticate, (req, res) => {
+app.delete('/todos/:id', authenticate, async (req, res) => {
     // get the id off the request object
     var id = req.params.id;
     // validate the id
     if (!ObjectID.isValid(id)) {
         return res.status(404).send();
     }
-    //now remove Todo by id
-    Todo.findOneAndRemove({
-        _id: id,
-        _creator: req.user._id
-    }).then((todo) => {
+
+    try {
+        const todo = await Todo.findOneAndRemove({
+            _id: id,
+            _creator: req.user._id
+        });
         if (!todo) {
             return res.status(404).send();
         }
         res.send({todo});
-    }, (e) => {
+    } catch (e) {
         res.status(400).send();
-    });
+    }
+
+//     //now remove Todo by id
+//     Todo.findOneAndRemove({
+//         _id: id,
+//         _creator: req.user._id
+//     }).then((todo) => {
+//         if (!todo) {
+//             return res.status(404).send();
+//         }
+//         res.send({todo});
+//     }, (e) => {
+//         res.status(400).send();
+//     });
 });
 
 // Update todo items using the patch route
-app.patch('/todos/:id', authenticate, (req, res) => {
+app.patch('/todos/:id', authenticate, async (req, res) => {
     var id = req.params.id;
     var body = _.pick(req.body, ['text', 'completed']);
 
@@ -166,24 +232,41 @@ app.patch('/todos/:id', authenticate, (req, res) => {
         body.completedAt = null;
     }
 
-    Todo.findOneAndUpdate({_id: id, _creator: req.user._id}, {$set: body}, {new: true}).then((todo) => {
+    try {
+        const todo = await Todo.findOneAndUpdate({_id: id, _creator: req.user._id}, {$set: body}, {new: true});
         if (!todo) {
             return res.status(404).send();
         }
-
         res.send({todo});
-    }).catch((e) => {
+    } catch (e) {
         res.status(400).send();
-    })
+    }
+
+    // Todo.findOneAndUpdate({_id: id, _creator: req.user._id}, {$set: body}, {new: true}).then((todo) => {
+    //     if (!todo) {
+    //         return res.status(404).send();
+    //     }
+    //
+    //     res.send({todo});
+    // }).catch((e) => {
+    //     res.status(400).send();
+    // })
 });
 
 
-app.delete('/users/me/token', authenticate, (req, res) => {
-    req.user.removeToken(req.token).then(() => {
+app.delete('/users/me/token', authenticate, async (req, res) => {
+    try {
+        await req.user.removeToken(req.token);
         res.status(200).send();
-    }, () => {
+    } catch (e) {
         res.status(400).send();
-    });
+    }
+
+    // req.user.removeToken(req.token).then(() => {
+    //     res.status(200).send();
+    // }, () => {
+    //     res.status(400).send();
+    // });
 });
 
 
